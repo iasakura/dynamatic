@@ -18,7 +18,7 @@ mkdir -p $1/$HDL_DIR
 
 mv $1/reports/*.vhd $1/$HDL_DIR
 
-cp $DHLS_INSTALL_DIR/etc/dynamatic/components/*.vhd $1/$HDL_DIR
+cp $DHLS_INSTALL_DIR/components/*.vhd $1/$HDL_DIR
 
 
 mv -f *.v $1/$HDL_DIR > /dev/null 2>&1

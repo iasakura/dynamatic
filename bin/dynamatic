@@ -1,8 +1,15 @@
-#!/bin/sh
+#!/bin/bash
 #Dynamatic startup wrapper
 #Author: Andrea Guerrieri andrea.guerrieri@epfl.ch
 #Version:0.0
 
 export TODAY_IS=`date +%F%H%M%S`
- 
+
+if [ -z ${LLVM_INSTALL_DIR+x} ]; then
+    echo "Error: LLVM_INSTALL_DIR is not set."
+    exit 1;
+fi
+
+export DHLS_INSTALL_DIR=`readlink -f $(dirname "$0")/..`
+
 stdbuf -o0 dhls $1 2>&1 | tee dynamatic_$TODAY_IS.log

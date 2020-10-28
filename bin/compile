@@ -1,19 +1,24 @@
+#!/bin/bash -x
 
+CLANG=${LLVM_INSTALL_DIR}/bin/clang # change depending on where your installation of clang is
+OPT=${LLVM_INSTALL_DIR}/bin/opt # change depending on where your installation of opt is
 
-CLANG=$CLANG_DIR/clang # change depending on where your installation of clang is
-OPT=$OPT_DIR/opt # change depending on where your installation of opt is
-PASS_DIR=$ELASTIC_DIR
+PASS_DIR=${DHLS_INSTALL_DIR}/llvm_passes
 
+args=( "$@" )
+echo "${args[@]}"
 
+name=${args[0]}
+BUILDDIR=${args[1]}
 
-echo "Andrea: arg1: " $1 "arg2:" $2 "arg3" $3 "arg4" $4
+# Take the arguments after 2
+opts=("${args[@]:2}")
+echo $opts
 
-BUILDDIR=$2
 #name=$1
 elaborated="_elaborated"
 
 #name=$1"_elaborated"
-name=$1
 SRC_DIR=src
 REPORT_DIR=reports
 HDL_DIR=hdl
@@ -22,7 +27,6 @@ HDL_DIR=hdl
 
 OPTIMIZATON_LEVEL= #O1, O2, O3
 OPTIMIZATION_FLAGS= #-fno-builtin, -fno-vectorize
-
 
 #mkdir -p $BUILDDIR
 cd $BUILDDIR
@@ -48,19 +52,16 @@ $OPT -simplifycfg .$name"_mem2reg_constprop.ll" -S -o .$name"_mem2reg_constprop_
 $OPT -die -instcombine -lowerswitch .$name"_mem2reg_constprop_simplifycfg.ll" -S -o .$name"_mem2reg_constprop_simplifycfg_die.ll"
 #Abdullah: Added -lowerswitch flag to handle switch to branch conversion.
 
-
-cc -c $PASS_DIR/FrequencyCounterPass/log_FrequencyCounter.c
-$CLANG -Xclang -load -Xclang $PASS_DIR/_build/FrequencyCounterPass/libFrequencyCounterPass.so -c .$name"_mem2reg_constprop_simplifycfg_die.ll"
+cc -c $PASS_DIR/log_FrequencyCounter.c
+$CLANG -Xclang -load -Xclang $PASS_DIR/libFrequencyCounterPass.so -c .$name"_mem2reg_constprop_simplifycfg_die.ll"
 cc -no-pie .$name"_mem2reg_constprop_simplifycfg_die.o" log_FrequencyCounter.o
 ./a.out
 rm a.out .$name"_mem2reg_constprop_simplifycfg_die.o" log_FrequencyCounter.o
 
-$CLANG -Xclang -load -Xclang $PASS_DIR/_build/FrequencyDataGatherPass/libFrequencyDataGatherPass.so .$name"_mem2reg_constprop_simplifycfg_die.ll" -S
+$CLANG -Xclang -load -Xclang $PASS_DIR/libFrequencyDataGatherPass.so .$name"_mem2reg_constprop_simplifycfg_die.ll" -S
 rm *.s
 
-
 #Shabnam
-
 
 #$OPT \
 #-load $PASS_DIR/_build/ElasticPass/libElasticPass.so \
@@ -68,14 +69,13 @@ rm *.s
 #-load $PASS_DIR/_build/MyCFGPass/libMyCFGPass.so \
 #-mycfgpass  $name"_mem2reg_constprop_simplifycfg_die.ll" -S
 
-
 $OPT \
--load $PASS_DIR/_build/MemElemInfo/libLLVMMemElemInfo.so \
--load $PASS_DIR/_build/ElasticPass/libElasticPass.so \
--load $PASS_DIR/_build/OptimizeBitwidth/libLLVMOptimizeBitWidth.so \
--load $PASS_DIR/_build/MyCFGPass/libMyCFGPass.so \
+-load $PASS_DIR//libLLVMMemElemInfo.so \
+-load $PASS_DIR//libElasticPass.so \
+-load $PASS_DIR//libLLVMOptimizeBitWidth.so \
+-load $PASS_DIR//libMyCFGPass.so \
 -polly-process-unprofitable -mycfgpass .$name"_mem2reg_constprop_simplifycfg_die.ll" -S \
-$3 $4
+$opt
 
 mv out.txt $REPORT_DIR/.$name"_new.txt" > /dev/null 2>&1
 mv print.txt $REPORT_DIR/.$name"_print.txt" > /dev/null 2>&1
@@ -95,8 +95,3 @@ mv *.dot $REPORT_DIR/$func_name".dot"
 
 dot -Tpng $REPORT_DIR/$func_name"_bbgraph.dot" > $REPORT_DIR/$func_name"_bbgraph.png"
 dot -Tpng $REPORT_DIR/$func_name".dot" > $REPORT_DIR/$func_name".png"
-
-
-
-
-
